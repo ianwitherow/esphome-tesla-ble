@@ -364,6 +364,14 @@ void TeslaBLEVehicle::set_force_update_button(button::Button *button) {
     }
 }
 
+void TeslaBLEVehicle::set_open_frunk_button(button::Button *button) {
+    ESP_LOGD(TAG, "Setting open frunk button with parent pointer");
+    TeslaOpenFrunkButton* frunk_button = static_cast<TeslaOpenFrunkButton*>(button);
+    if (frunk_button) {
+        frunk_button->set_parent(this);
+    }
+}
+
 // Public vehicle actions
 int TeslaBLEVehicle::wake_vehicle() {
     ESP_LOGD(TAG, "Sending wake command");
@@ -418,6 +426,23 @@ void TeslaBLEVehicle::force_update() {
         // Vehicle is awake (or status unknown), just get fresh data
         polling_manager_->force_full_update();
     }
+}
+
+int TeslaBLEVehicle::open_frunk() {
+    ESP_LOGI(TAG, "Opening frunk");
+    
+    // Track command to delay polling
+    if (state_manager_) {
+        state_manager_->track_command_issued();
+    }
+    
+    if (!command_manager_) {
+        ESP_LOGE(TAG, "Command manager not available");
+        return -1;
+    }
+    
+    command_manager_->enqueue_open_frunk();
+    return 0;
 }
 
 // Vehicle control actions
@@ -681,6 +706,10 @@ void TeslaRegenerateKeyButton::press_action() {
 
 void TeslaForceUpdateButton::press_action() {
     if (parent_) parent_->force_update();
+}
+
+void TeslaOpenFrunkButton::press_action() {
+    if (parent_) parent_->open_frunk();
 }
 
 void TeslaChargingSwitch::write_state(bool state) {

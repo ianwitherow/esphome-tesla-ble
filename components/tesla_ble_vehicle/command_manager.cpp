@@ -3,6 +3,8 @@
 #include <client.h>
 #include "log.h"
 #include "common.h"
+#include <vcsec.pb.h>
+#include <string.h>
 
 namespace esphome {
 namespace tesla_ble_vehicle {
@@ -503,6 +505,51 @@ void CommandManager::enqueue_set_charging_limit(int limit) {
                 &limit_param);
         }),
         "set charging limit"
+    );
+}
+
+void CommandManager::enqueue_open_frunk() {
+    enqueue_command(
+        UniversalMessage_Domain_DOMAIN_VEHICLE_SECURITY,
+        create_command(parent_, [](auto* client, auto* buffer, auto* length) {
+            // Build closure move request for front trunk
+            VCSEC_UnsignedMessage unsigned_message = VCSEC_UnsignedMessage_init_default;
+            unsigned_message.which_sub_message = VCSEC_UnsignedMessage_closureMoveRequest_tag;
+            
+            // Initialize all fields to NONE (default)
+            unsigned_message.sub_message.closureMoveRequest = VCSEC_ClosureMoveRequest_init_default;
+            
+            // Set frontTrunk to MOVE action (this is what Tesla's official SDK uses for opening the frunk)
+            unsigned_message.sub_message.closureMoveRequest.frontTrunk = VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_MOVE;
+            
+            // Build the unsigned message payload with encryption
+            // Following the same pattern as buildVCSECActionMessage
+            size_t universal_encode_buffer_size = UniversalMessage_RoutableMessage_size;
+            pb_byte_t universal_encode_buffer[universal_encode_buffer_size];
+            int status = client->buildUnsignedMessagePayload(&unsigned_message, universal_encode_buffer, &universal_encode_buffer_size, true);
+            if (status != 0) {
+                ESP_LOGE(COMMAND_MANAGER_TAG, "Failed to build unsigned message for frunk command");
+                return status;
+            }
+            
+            // Copy to output buffer with length prepended
+            // Since prependLength is private, we need to manually add the 2-byte length prefix
+            if (*length < universal_encode_buffer_size + 2) {
+                ESP_LOGE(COMMAND_MANAGER_TAG, "Output buffer too small for frunk command");
+                return -1;
+            }
+            
+            // Prepend the length (2 bytes, big-endian)
+            buffer[0] = (universal_encode_buffer_size >> 8) & 0xFF;
+            buffer[1] = universal_encode_buffer_size & 0xFF;
+            
+            // Copy the message
+            memcpy(buffer + 2, universal_encode_buffer, universal_encode_buffer_size);
+            *length = universal_encode_buffer_size + 2;
+            
+            return 0;
+        }),
+        "open frunk"
     );
 }
 

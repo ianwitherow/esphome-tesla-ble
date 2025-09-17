@@ -30,6 +30,7 @@ TeslaWakeButton = tesla_ble_vehicle_ns.class_("TeslaWakeButton", button.Button)
 TeslaPairButton = tesla_ble_vehicle_ns.class_("TeslaPairButton", button.Button)
 TeslaRegenerateKeyButton = tesla_ble_vehicle_ns.class_("TeslaRegenerateKeyButton", button.Button)
 TeslaForceUpdateButton = tesla_ble_vehicle_ns.class_("TeslaForceUpdateButton", button.Button)
+TeslaOpenFrunkButton = tesla_ble_vehicle_ns.class_("TeslaOpenFrunkButton", button.Button)
 
 # Custom switch classes
 TeslaChargingSwitch = tesla_ble_vehicle_ns.class_("TeslaChargingSwitch", switch.Switch)
@@ -46,6 +47,7 @@ ForceUpdateAction = tesla_ble_vehicle_ns.class_("ForceUpdateAction", automation.
 SetChargingAction = tesla_ble_vehicle_ns.class_("SetChargingAction", automation.Action)
 SetChargingAmpsAction = tesla_ble_vehicle_ns.class_("SetChargingAmpsAction", automation.Action)
 SetChargingLimitAction = tesla_ble_vehicle_ns.class_("SetChargingLimitAction", automation.Action)
+OpenFrunkAction = tesla_ble_vehicle_ns.class_("OpenFrunkAction", automation.Action)
 
 # Configuration constants
 CONF_VIN = "vin"
@@ -264,6 +266,17 @@ async def to_code(config):
     cg.add(force_update_button.set_parent(var))
     cg.add(var.set_force_update_button(force_update_button))
 
+    # Only add frunk button for DRIVER role
+    if role == "DRIVER":
+        open_frunk_button = await button.new_button({
+            CONF_ID: cv.declare_id(TeslaOpenFrunkButton)("tesla_open_frunk_button"),
+            CONF_NAME: "Open Frunk",
+            CONF_ICON: "mdi:car-door",
+            CONF_DISABLED_BY_DEFAULT: False,
+        })
+        cg.add(open_frunk_button.set_parent(var))
+        cg.add(var.set_open_frunk_button(open_frunk_button))
+
     ## Switches
     charger_switch = await switch.new_switch({
         CONF_ID: cv.declare_id(TeslaChargingSwitch)("tesla_charger_switch"),
@@ -336,6 +349,10 @@ TESLA_SET_CHARGING_LIMIT_ACTION_SCHEMA = cv.Schema({
     cv.Required("limit"): cv.templatable(cv.int_range(min=50, max=100)),
 })
 
+TESLA_OPEN_FRUNK_ACTION_SCHEMA = cv.Schema({
+    cv.Required(CONF_ID): cv.use_id(TeslaBLEVehicle),
+})
+
 
 # Register actions
 @automation.register_action(
@@ -401,5 +418,13 @@ async def tesla_set_charging_limit_to_code(config, action_id, template_arg, args
     template_ = await cg.templatable(config["limit"], args, int)
     cg.add(var.set_limit(template_))
     return var
+
+
+@automation.register_action(
+    "tesla_ble_vehicle.open_frunk", OpenFrunkAction, TESLA_OPEN_FRUNK_ACTION_SCHEMA
+)
+async def tesla_open_frunk_to_code(config, action_id, template_arg, args):
+    paren = await cg.get_variable(config[CONF_ID])
+    return cg.new_Pvariable(action_id, template_arg, paren)
 
 

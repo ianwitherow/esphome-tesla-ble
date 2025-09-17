@@ -87,6 +87,7 @@ public:
     void set_pair_button(button::Button *button);
     void set_regenerate_key_button(button::Button *button);
     void set_force_update_button(button::Button *button);
+    void set_open_frunk_button(button::Button *button);
 
     // Public vehicle actions
     int wake_vehicle();
@@ -95,6 +96,7 @@ public:
     void force_update();
 
     // Vehicle control actions
+    int open_frunk();
     int set_charging_state(bool charging);
     int set_charging_amps(int amps);
     int set_charging_limit(int limit);
@@ -213,6 +215,14 @@ protected:
     TeslaBLEVehicle *parent_{nullptr};
 };
 
+class TeslaOpenFrunkButton : public button::Button {
+public:
+    void set_parent(TeslaBLEVehicle *parent) { parent_ = parent; }
+protected:
+    void press_action() override;
+    TeslaBLEVehicle *parent_{nullptr};
+};
+
 class TeslaChargingSwitch : public switch_::Switch {
 public:
     void set_parent(TeslaBLEVehicle *parent) { parent_ = parent; }
@@ -308,6 +318,14 @@ public:
 protected:
     TeslaBLEVehicle *parent_;
     esphome::TemplatableValue<int, Ts...> limit_;
+};
+
+template<typename... Ts> class OpenFrunkAction : public Action<Ts...> {
+public:
+    OpenFrunkAction(TeslaBLEVehicle *parent) : parent_(parent) {}
+    void play(Ts... x) override { parent_->open_frunk(); }
+protected:
+    TeslaBLEVehicle *parent_;
 };
 
 } // namespace tesla_ble_vehicle
