@@ -151,6 +151,14 @@ void TeslaBLEVehicle::loop() {
         return;
     }
 
+    // Execute pending command that was requested while disconnected
+    if (pending_command_) {
+        ESP_LOGI(TAG, "Executing pending command after BLE reconnect");
+        auto cmd = std::move(pending_command_);
+        pending_command_ = nullptr;
+        cmd();
+    }
+
     // Process in dependency order
     ble_manager_->process_read_queue();
     message_handler_->process_response_queue();
@@ -430,17 +438,26 @@ void TeslaBLEVehicle::force_update() {
 
 int TeslaBLEVehicle::open_frunk() {
     ESP_LOGI(TAG, "Opening frunk");
-    
+
+    if (!is_connected()) {
+        ESP_LOGW(TAG, "Not connected - forcing BLE reconnect and queuing frunk command");
+        pending_command_ = [this]() { this->open_frunk(); };
+        // Cycle the BLE client off/on to reset the reconnection backoff timer
+        this->parent()->set_enabled(false);
+        this->parent()->set_enabled(true);
+        return 0;
+    }
+
     // Track command to delay polling
     if (state_manager_) {
         state_manager_->track_command_issued();
     }
-    
+
     if (!command_manager_) {
         ESP_LOGE(TAG, "Command manager not available");
         return -1;
     }
-    
+
     command_manager_->enqueue_open_frunk();
     return 0;
 }

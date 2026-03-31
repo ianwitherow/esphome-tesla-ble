@@ -144,9 +144,12 @@ private:
     
     // Polling intervals (in milliseconds) - stored for late initialization
     uint32_t vcsec_poll_interval_{10000};                     // 10s default
-    uint32_t infotainment_poll_interval_awake_{30000};        // 30s default 
+    uint32_t infotainment_poll_interval_awake_{30000};        // 30s default
     uint32_t infotainment_poll_interval_active_{10000};       // 10s default
     uint32_t infotainment_sleep_timeout_{660000};             // 11 minutes (660s) default
+
+    // Pending command to execute after BLE reconnect
+    std::function<void()> pending_command_{nullptr};
 
     // Temporary storage for sensors before state_manager_ is initialized
     binary_sensor::BinarySensor* pending_asleep_sensor_{nullptr};
