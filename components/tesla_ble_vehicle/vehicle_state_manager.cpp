@@ -74,7 +74,7 @@ void VehicleStateManager::update_charge_state(const CarServer_ChargeState& charg
         
         // Always sync charging switch with vehicle state, but respect command delay
         // This prevents race conditions where user commands are overwritten by stale vehicle data
-        if (charging_switch_ && (!charging_switch_->has_state() || charging_switch_->state != is_charging_)) {
+        if (charging_switch_ && charging_switch_->state != is_charging_) {
             if (should_delay_infotainment_request()) {
                 ESP_LOGD(STATE_MANAGER_TAG, "Delaying charging switch sync due to recent command (vehicle: %s, switch: %s)", 
                          is_charging_ ? "ON" : "OFF", 
@@ -379,7 +379,7 @@ void VehicleStateManager::publish_sensor_state(sensor::Sensor* sensor, float sta
 }
 
 void VehicleStateManager::publish_sensor_state(switch_::Switch* switch_comp, bool state) {
-    if (switch_comp != nullptr && (!switch_comp->has_state() || switch_comp->state != state)) {
+    if (switch_comp != nullptr && switch_comp->state != state) {
         switch_comp->publish_state(state);
     }
 }
@@ -391,15 +391,15 @@ void VehicleStateManager::publish_sensor_state(number::Number* number_comp, floa
 }
 
 void VehicleStateManager::set_sensor_available(binary_sensor::BinarySensor* sensor, bool available) {
-    if (sensor != nullptr) {
-        sensor->set_has_state(available);
-    }
+    // set_has_state() not available in ESPHome 2025.3.x
+    (void)sensor;
+    (void)available;
 }
 
 void VehicleStateManager::set_sensor_available(sensor::Sensor* sensor, bool available) {
-    if (sensor != nullptr) {
-        sensor->set_has_state(available);
-    }
+    // set_has_state() not available in ESPHome 2025.3.x
+    (void)sensor;
+    (void)available;
 }
 
 // State conversion helpers

@@ -31,6 +31,7 @@ TeslaPairButton = tesla_ble_vehicle_ns.class_("TeslaPairButton", button.Button)
 TeslaRegenerateKeyButton = tesla_ble_vehicle_ns.class_("TeslaRegenerateKeyButton", button.Button)
 TeslaForceUpdateButton = tesla_ble_vehicle_ns.class_("TeslaForceUpdateButton", button.Button)
 TeslaOpenFrunkButton = tesla_ble_vehicle_ns.class_("TeslaOpenFrunkButton", button.Button)
+TeslaForceReconnectButton = tesla_ble_vehicle_ns.class_("TeslaForceReconnectButton", button.Button)
 
 # Custom switch classes
 TeslaChargingSwitch = tesla_ble_vehicle_ns.class_("TeslaChargingSwitch", switch.Switch)
@@ -276,6 +277,16 @@ async def to_code(config):
         })
         cg.add(open_frunk_button.set_parent(var))
         cg.add(var.set_open_frunk_button(open_frunk_button))
+
+    force_reconnect_button = await button.new_button({
+        CONF_ID: cv.declare_id(TeslaForceReconnectButton)("tesla_force_reconnect_button"),
+        CONF_NAME: "Force BLE Reconnect",
+        CONF_ICON: "mdi:bluetooth-connect",
+        CONF_DISABLED_BY_DEFAULT: False,
+        CONF_ENTITY_CATEGORY: cg.EntityCategory.ENTITY_CATEGORY_DIAGNOSTIC,
+    })
+    cg.add(force_reconnect_button.set_parent(var))
+    cg.add(var.set_force_reconnect_button(force_reconnect_button))
 
     ## Switches
     charger_switch = await switch.new_switch({

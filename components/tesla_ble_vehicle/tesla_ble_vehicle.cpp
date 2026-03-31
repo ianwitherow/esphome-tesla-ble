@@ -380,6 +380,24 @@ void TeslaBLEVehicle::set_open_frunk_button(button::Button *button) {
     }
 }
 
+void TeslaBLEVehicle::set_force_reconnect_button(button::Button *button) {
+    ESP_LOGD(TAG, "Setting force reconnect button with parent pointer");
+    TeslaForceReconnectButton* reconnect_button = static_cast<TeslaForceReconnectButton*>(button);
+    if (reconnect_button) {
+        reconnect_button->set_parent(this);
+    }
+}
+
+void TeslaBLEVehicle::force_reconnect() {
+    if (is_connected()) {
+        ESP_LOGI(TAG, "Already connected, ignoring reconnect request");
+        return;
+    }
+    ESP_LOGI(TAG, "Forcing BLE reconnect (resetting backoff)");
+    this->parent()->set_enabled(false);
+    this->parent()->set_enabled(true);
+}
+
 // Public vehicle actions
 int TeslaBLEVehicle::wake_vehicle() {
     ESP_LOGD(TAG, "Sending wake command");
@@ -727,6 +745,10 @@ void TeslaForceUpdateButton::press_action() {
 
 void TeslaOpenFrunkButton::press_action() {
     if (parent_) parent_->open_frunk();
+}
+
+void TeslaForceReconnectButton::press_action() {
+    if (parent_) parent_->force_reconnect();
 }
 
 void TeslaChargingSwitch::write_state(bool state) {

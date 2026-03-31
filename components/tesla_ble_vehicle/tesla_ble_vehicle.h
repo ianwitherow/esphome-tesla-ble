@@ -88,6 +88,7 @@ public:
     void set_regenerate_key_button(button::Button *button);
     void set_force_update_button(button::Button *button);
     void set_open_frunk_button(button::Button *button);
+    void set_force_reconnect_button(button::Button *button);
 
     // Public vehicle actions
     int wake_vehicle();
@@ -97,6 +98,7 @@ public:
 
     // Vehicle control actions
     int open_frunk();
+    void force_reconnect();
     int set_charging_state(bool charging);
     int set_charging_amps(int amps);
     int set_charging_limit(int limit);
@@ -219,6 +221,14 @@ protected:
 };
 
 class TeslaOpenFrunkButton : public button::Button {
+public:
+    void set_parent(TeslaBLEVehicle *parent) { parent_ = parent; }
+protected:
+    void press_action() override;
+    TeslaBLEVehicle *parent_{nullptr};
+};
+
+class TeslaForceReconnectButton : public button::Button {
 public:
     void set_parent(TeslaBLEVehicle *parent) { parent_ = parent; }
 protected:
