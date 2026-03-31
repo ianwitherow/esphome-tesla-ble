@@ -1,2 +1,3 @@
 - components: [tesla_ble_vehicle, tesla_ble_listener]
-  source: github://yoziru/esphome-tesla-ble/components@main
+  source: github://ianwitherow/esphome-tesla-ble/components@main
+  refresh: 0s
